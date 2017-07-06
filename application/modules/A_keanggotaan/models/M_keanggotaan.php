@@ -1,0 +1,132 @@
+<?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+class M_keanggotaan extends MY_Model {
+
+    public function __construct(){
+        parent::__construct();
+        $this->load->database();
+    }
+
+    public function select_data_keanggotaan(){
+        $data=$this->db->get('tabel_keanggotaan')->result_array();
+        echo json_encode($data);
+    }
+    public function insert_data_keanggotaan(){
+        if($_FILES['userfile']['name']){
+            $nmfile = "profil_".date("Ymdhis"); //nama file saya beri nama langsung dan diikuti fungsi time
+            $config['file_name']        = $nmfile; //nama yang terupload nantinya
+            $config['upload_path']      = 'gambar/profil'; //path folder
+            $config['allowed_types']    = 'gif|jpg|png|jpeg|bmp'; //type yang dapat diakses bisa anda sesuaikan
+            $config['max_size']         = '10000'; //maksimum besar file 2M
+            $config['max_width']        = '7000'; //lebar maksimum 1288 px
+            $config['max_height']       = '7000'; //tinggi maksimu 768 px
+
+            $this->load->library('upload', $config);
+            $this->upload->do_upload('userfile');
+            $val   = $this->upload->data();
+            $gambar = $val['file_name'];
+
+            $this->load->library('image_lib');
+
+            $config['create_thumb']     = false;
+            $config['image_library']    = 'gd2';
+            $config['source_image']     = $this->upload->upload_path.$this->upload->file_name;
+            $config['maintain_ratio']   = true;
+            $config['width']            = '500';
+            $config['height']           = '450';
+            $config['quality']          = '100';
+            $this->image_lib->initialize($config);
+            $this->image_lib->resize();
+        }
+
+        $data['nim']        = $this->input->post('nim');
+        $data['nama']       = $this->input->post('nama');
+        $data['jk']         = $this->input->post('jk');
+        $data['tempat_lahir']  = $this->input->post('tempat');
+        $data['tgl_lahir']  = $this->input->post('lahir');
+        $data['telp']       = $this->input->post('notelp');
+        $data['jurusan']    = $this->input->post('jurusan');
+        $data['alamat']     = $this->input->post('alamat');
+        $data['tgl_update'] = date('Y-m-d h:i:s');
+        $data['tgl_daftar '] = date('Y-m-d h:i:s');
+        $data['foto']       = $gambar;
+
+        $this->db->insert('tabel_keanggotaan',$data);
+        redirect('dashboard/keanggotaan');
+    }
+
+    public function update_data_keanggotaan(){
+        if($_FILES['userfile']['name']){
+            $nmfile = "profil_".date("Ymdhis"); //nama file saya beri nama langsung dan diikuti fungsi time
+            $config['file_name']        = $nmfile; //nama yang terupload nantinya
+            $config['upload_path']      = 'gambar/profil'; //path folder
+            $config['allowed_types']    = 'gif|jpg|png|jpeg|bmp'; //type yang dapat diakses bisa anda sesuaikan
+            $config['max_size']         = '10000'; //maksimum besar file 2M
+            $config['max_width']        = '7000'; //lebar maksimum 1288 px
+            $config['max_height']       = '7000'; //tinggi maksimu 768 px
+
+            $this->load->library('upload', $config);
+            $this->upload->do_upload('userfile');
+            $val   = $this->upload->data();
+            $gambar = $val['file_name'];
+
+            $this->load->library('image_lib');
+
+            $config['create_thumb']     = false;
+            $config['image_library']    = 'gd2';
+            $config['source_image']     = $this->upload->upload_path.$this->upload->file_name;
+            $config['maintain_ratio']   = true;
+            $config['width']            = '500';
+            $config['height']           = '450';
+            $config['quality']          = '100';
+            $this->image_lib->initialize($config);
+            $this->image_lib->resize();
+
+            unlink($this->upload->upload_path.$this->input->post('fotolama'));
+
+            $data['foto']=$gambar;
+        }
+
+
+        $data['nim']        = $this->input->post('nim');
+        $data['nama']       = $this->input->post('nama');
+        $data['jk']         = $this->input->post('jk');
+        $data['tempat_lahir']  = $this->input->post('tempat');
+        $data['tgl_lahir']  = $this->input->post('lahir');
+        $data['telp']       = $this->input->post('notelp');
+        $data['jurusan']    = $this->input->post('jurusan');
+        $data['alamat']     = $this->input->post('alamat');
+        $data['tgl_update'] = date('Y-m-d h:i:s');
+
+        $this->db->where('id',$this->input->post('idnya'));
+        $this->db->update('tabel_keanggotaan',$data);
+        redirect('dashboard/keanggotaan');
+    }
+
+    public function delete_data_keanggotaan(){
+        $id=$this->input->post('id');
+        $this->db->where('id',$id);
+        $data=$this->db->get('tabel_keanggotaan')->row_array();
+
+        unlink('gambar/profil/'.$data['foto']);
+        $this->db->where('id',$id);
+        $this->db->delete('tabel_keanggotaan');
+    }
+
+    public function view_data_edit_keanggotaan(){
+        $id=$this->uri->segment(4);
+
+        $this->db->where('id',$id);
+        return $this->db->get('tabel_keanggotaan')->row_array();
+    }
+
+    public function select_data_pencarian(){
+        $hasil = $this->input->post('pencarian');
+        $array = array('nim' => $hasil, 'nama' => $hasil, 'jurusan' => $hasil);
+        $this->db->or_like($array);
+        echo json_encode($this->db->get('tabel_keanggotaan')->result_array());
+    }
+
+}
+?>
